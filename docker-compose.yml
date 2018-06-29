@@ -1,0 +1,28 @@
+version: "3"
+services:
+  yard-docs:
+    build: .
+    command: bundle exec yard server --reload
+    ports:
+      - 9999:8808
+    volumes:
+      - .:/src
+      - bundle:/bundle
+
+  test:
+    build: .
+    command: bundle exec guard --no-bundler-warning --no-interactions
+    volumes:
+      - .:/src
+      - bundle:/bundle
+    links:
+      - db
+
+  db:
+    image: postgres:9.6.6
+    volumes:
+      - database:/var/lib/postgresql/data
+
+volumes:
+  bundle:
+  database:
