@@ -26,7 +26,7 @@ module PgConduit
     # Execute query and yield each row
     # @yield [Hash] A hash representing a single row from the result set
     def each_row
-      @conn.send_query @query
+      @conn.send_query @sql
       @conn.set_single_row_mode
       @conn.get_result.stream_each do |row|
         yield row

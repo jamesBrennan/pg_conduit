@@ -1,7 +1,5 @@
 require 'spec_helper'
 
-
-
 RSpec.describe PgConduit::QueryStream do
   SRC_URL = 'postgres://postgres@db/pg_conduit_src_test'
 
@@ -44,11 +42,14 @@ RSpec.describe PgConduit::QueryStream do
       end
     end
 
-    it 'runs' do
+    it 'yields each row' do
       with_stream do |stream|
-        stream.query('select * from people') do |row|
-          puts row
-        end
+        expect { |b| stream.query('select * from people').each_row(&b) }.to(
+          yield_successive_args(
+            { 'full_name' => 'Robert Oppenheimer', 'dob' => '1904-04-22' },
+            { 'full_name' => 'John Muir', 'dob' => '1838-04-21' }
+          )
+        )
       end
     end
   end
