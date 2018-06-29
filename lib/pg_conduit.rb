@@ -1,5 +1,7 @@
-require "pg_conduit/version"
+require 'pg'
+
+require 'pg_conduit/version'
 
 module PgConduit
-  # Your code goes here...
+  autoload :QueryStream, 'pg_conduit/query_stream'
 end
