@@ -1,8 +1,7 @@
 require 'spec_helper'
 
 RSpec.describe PgConduit::StreamDispatcher do
-  subject(:dispatcher) { described_class.new(pool) }
-  let(:pool) { instance_double(ConnectionPool) }
+  subject(:dispatcher) { described_class.new }
 
   let(:query_stream) { instance_double(PgConduit::QueryStream) }
 
@@ -13,7 +12,7 @@ RSpec.describe PgConduit::StreamDispatcher do
   it 'yields each row in the stream' do
     expect(query_stream).to(
       receive(:each_row).tap do |exp|
-        200.times do |n|
+        150.times do |n|
           exp.and_yield("row_#{n}")
         end
         exp.and_yield(nil)
@@ -21,6 +20,6 @@ RSpec.describe PgConduit::StreamDispatcher do
     )
     expect { |b|
       dispatcher.process_query_stream(query_stream, &b)
-    }.to yield_control.exactly(200).times
+    }.to yield_control.exactly(150).times
   end
 end
