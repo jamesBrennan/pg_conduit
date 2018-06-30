@@ -15,11 +15,15 @@ services:
     volumes:
       - .:/src
       - bundle:/bundle
+    environment:
+      - TEST_DB_URL=postgres://postgres@db/pg_conduit_src_test
     links:
       - db
 
   db:
     image: postgres:9.6.6
+    ports:
+      - 5499:5432
     volumes:
       - database:/var/lib/postgresql/data
 

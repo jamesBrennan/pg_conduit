@@ -1,14 +1,12 @@
 require 'spec_helper'
 
-RSpec.describe PgConduit::QueryStream do
-  SRC_URL = 'postgres://postgres@db/pg_conduit_src_test'
-
-  def with_stream
-    with_connection SRC_URL do |conn|
-      yield PgConduit::QueryStream.new(conn)
-    end
+def with_stream
+  with_connection ENV.fetch('TEST_DB_URL') do |conn|
+    yield PgConduit::QueryStream.new(conn)
   end
+end
 
+RSpec.describe PgConduit::QueryStream do
   describe '.query' do
     it 'sets the value of @sql' do
       with_stream do |stream|
@@ -26,7 +24,7 @@ RSpec.describe PgConduit::QueryStream do
 
   describe '.each_row' do
     before do
-      with_connection(SRC_URL) do |conn|
+      with_connection ENV.fetch('TEST_DB_URL') do |conn|
         conn.exec <<-SQL
           DROP TABLE IF EXISTS people;
           CREATE TABLE people (
