@@ -12,11 +12,6 @@ RSpec.describe PgConduit::Pipe do
           full_name character varying,
           dob date
         );
-
-        INSERT INTO people (full_name, dob)
-        VALUES
-          ('Robert Oppenheimer', '1904-04-22'),
-          ('John Muir', '1838-04-21')
       SQL
     end
 
@@ -31,23 +26,77 @@ RSpec.describe PgConduit::Pipe do
     end
   end
 
-  it 'sends the data' do
-    described_class
-      .new(from: src, to: dest)
-      .send('SELECT * FROM people')
-      .as do |person|
-        <<-SQL
-          INSERT INTO friends (full_name, age)
-          VALUES (
-            '#{person['full_name']}', 
-            EXTRACT(YEAR FROM age('#{person['dob']}'::timestamp))
-          )
+  describe 'processing one row at a time' do
+    before do
+      with_connection src do |conn|
+        conn.exec <<-SQL
+          INSERT INTO people (full_name, dob)
+          VALUES
+            ('Robert Oppenheimer', '1904-04-22'),
+            ('John Muir', '1838-04-21')
         SQL
+      end
     end
 
-    with_connection dest do |conn|
-      res = conn.exec('SELECT count(*) FROM friends')
-      expect(res[0]).to eql('count' => '2')
+    it 'works' do
+      described_class
+        .new(from: src, to: dest)
+        .send('SELECT * FROM people')
+        .as do |person|
+          <<-SQL
+            INSERT INTO friends (full_name, age)
+            VALUES (
+              '#{person['full_name']}', 
+              EXTRACT(YEAR FROM age('#{person['dob']}'::timestamp))
+            )
+          SQL
+        end
+
+      with_connection dest do |conn|
+        res = conn.exec('SELECT count(*) FROM friends')
+        expect(res[0]).to eql('count' => '2')
+      end
+    end
+  end
+
+  describe 'processing rows in chunks' do
+    let(:people) {
+      100.times.map do |n|
+        %(('Person #{n}', '1990-04-#{(n % 30) + 1}'))
+      end.join(',')
+    }
+
+    before do
+      with_connection src do |conn|
+        conn.exec <<-SQL
+          DELETE FROM people;        
+
+          INSERT INTO people (full_name, dob)
+          VALUES #{people};
+        SQL
+      end
+
+      with_connection dest do |conn|
+        conn.exec <<-SQL
+          DELETE FROM friends;
+        SQL
+      end
+    end
+
+    it 'works' do
+      described_class
+        .new(from: src, to: dest)
+        .send('SELECT * FROM people')
+        .as_chunked(
+          size: 10,
+          prefix: 'INSERT INTO friends (full_name, age) VALUES') do |person|
+            %(('#{person['full_name']}', EXTRACT(YEAR FROM age('#{person['dob']}'::timestamp))))
+          end
+
+      with_connection dest do |conn|
+        res = conn.exec('SELECT count(*) FROM friends')
+        expect(res[0]).to eql('count' => '100')
+      end
     end
   end
 end

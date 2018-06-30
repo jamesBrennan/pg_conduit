@@ -23,17 +23,23 @@ module PgConduit
         raise 'Data may not be added to a row collector that has been marked as finished'
       end
 
-      @rows << row
-      if @rows.length % @chunk_size == 0
-        flush(&@callback)
-      end
+      Fiber.new do
+        @rows << row
+        if @rows.length % @chunk_size == 0
+          flush(&@callback)
+        end
+        Fiber.yield
+      end.resume
     end
 
     # Flushes any collected rows, yielding them to the callback and marks the
     # collector as finished. Any subsequent calls to :<< will raise an error.
     def finish
-      flush(&@callback)
-      @finished = true
+      Fiber.new do
+        flush(&@callback)
+        @finished = true
+        Fiber.yield
+      end.resume
     end
 
     # Yields the collected rows and resets the row collector

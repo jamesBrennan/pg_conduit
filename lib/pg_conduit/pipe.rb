@@ -35,6 +35,21 @@ module PgConduit
       end
     end
 
+    def as_chunked(size: 1000, prefix: nil)
+      collector = RowCollector.new
+      collector.every(size) do |rows|
+        if rows.length > 0
+          destination_exec [prefix, rows.join(',')].join(' ')
+        end
+      end
+
+      with_query_stream do |stream|
+        read(stream) { |row| collector << yield(row) }
+      end
+
+      collector.finish
+    end
+
     private
 
     def connections
