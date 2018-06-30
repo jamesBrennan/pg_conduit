@@ -3,15 +3,14 @@ require 'pg_conduit/query_stream'
 require 'pg_conduit/parallel_stream_reader'
 
 module PgConduit
-  class Builder
+  class Pipe
     # @example
-    #   Builder
-    #     .new(from: 'postgres://remote_db', to: 'postgres:://local_db')
+    #   Pipe
+    #     .new(from: 'postgres://remote_db', to: 'postgres://local_db')
     #     .send('SELECT name FROM users')
     #     .as do |user|
     #       %(INSERT INTO friends (name) VALUES ('#{user["full_name"]}'))
     #     end
-    #
 
     def initialize(from: nil, to: nil)
       @src = from

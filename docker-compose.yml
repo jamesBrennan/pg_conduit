@@ -16,7 +16,8 @@ services:
       - .:/src
       - bundle:/bundle
     environment:
-      - TEST_DB_URL=postgres://postgres@db/pg_conduit_src_test
+      - TEST_DB_SRC=postgres://postgres@db/pg_conduit_src_test
+      - TEST_DB_DEST=postgres://postgres@db/pg_conduit_dest_test
     links:
       - db
 

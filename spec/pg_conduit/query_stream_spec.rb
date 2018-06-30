@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 def with_stream
-  with_connection ENV.fetch('TEST_DB_URL') do |conn|
+  with_connection ENV.fetch('TEST_DB_SRC') do |conn|
     yield PgConduit::QueryStream.new(conn)
   end
 end
@@ -24,7 +24,7 @@ RSpec.describe PgConduit::QueryStream do
 
   describe '.each_row' do
     before do
-      with_connection ENV.fetch('TEST_DB_URL') do |conn|
+      with_connection ENV.fetch('TEST_DB_SRC') do |conn|
         conn.exec <<-SQL
           DROP TABLE IF EXISTS people;
           CREATE TABLE people (
