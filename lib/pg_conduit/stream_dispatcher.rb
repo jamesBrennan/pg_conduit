@@ -1,8 +1,8 @@
 module PgConduit
   # Async stream processor
   class StreamDispatcher
-    def initialize(workers: 5)
-      @queue = Queue.new
+    def initialize(workers: 5, queue_max: 1000)
+      @queue = SizedQueue.new(queue_max)
       @workers = workers
     end
 
@@ -37,7 +37,6 @@ module PgConduit
 
     def enqueue(row)
       Fiber.new do
-        while apply_back_pressure?; end
         @queue << row
         Fiber.yield
       end.resume
@@ -50,10 +49,6 @@ module PgConduit
         callback.call row
         Fiber.yield true
       end.resume
-    end
-
-    def apply_back_pressure?
-      @queue.size > 1000
     end
   end
 end
