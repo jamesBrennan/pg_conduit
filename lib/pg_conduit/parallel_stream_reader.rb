@@ -25,7 +25,7 @@ module PgConduit
 
     def read_stream(query_stream)
       Thread.new do
-        query_stream.each_row { |row| enqueue(row) }
+        query_stream.each_row { |row| @queue << row }
         @queue.close
       end
     end
@@ -43,20 +43,16 @@ module PgConduit
       end
     end
 
-    def enqueue(row)
-      Fiber.new do
-        @queue << row
-        Fiber.yield
-      end.resume
-    end
-
     def process_next(&callback)
-      Fiber.new do
+      continue = false
+      Thread.new do
         row = @queue.deq
-        Fiber.yield unless row
-        callback.call row
-        Fiber.yield true
-      end.resume
+        if row
+          callback.call row
+          continue = true
+        end
+      end.join
+      continue
     end
   end
 end
