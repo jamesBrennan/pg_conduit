@@ -1,5 +1,3 @@
-require 'pg_conduit/parallel_stream_reader'
-
 module PgConduit
   class Pipe
     # @example
