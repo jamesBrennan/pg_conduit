@@ -1,22 +1,18 @@
-require 'pg_conduit/connections'
-require 'pg_conduit/query_stream'
 require 'pg_conduit/parallel_stream_reader'
-require 'pg_conduit/db_writer'
 
 module PgConduit
   class Pipe
     # @example
     #   Pipe
-    #     .new(from: 'postgres://remote_db', to: 'postgres://local_db')
+    #     .new(from: query_stream, to: db_writer)
     #     .send('SELECT name FROM users')
     #     .as do |user|
     #       %(INSERT INTO friends (name) VALUES ('#{user["full_name"]}'))
     #     end
     def initialize(from:, to:)
-      @connections = Connections.new(from, to)
-      @stream = QueryStream.new(@connections.src_pool)
+      @stream = from
+      @writer = to
       @reader = ParallelStreamReader.new(@stream)
-      @writer = DBWriter.new(@connections.dest_pool)
     end
 
     def send(query)
