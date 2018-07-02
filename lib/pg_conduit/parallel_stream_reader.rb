@@ -15,15 +15,11 @@ module PgConduit
     #
     # @yield [Hash] A single row from the QueryStream. Every row from the stream
     #   will be yielded but order is not guaranteed.
-    def process(&callback)
+    def read(&callback)
       reader  = read_stream(@stream)
       workers = dispatch_workers(&callback)
       reader.join
       workers.each { |t| t.join }
-    end
-
-    def read(&callback)
-      process(&callback)
     end
 
     private
