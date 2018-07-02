@@ -3,8 +3,8 @@ require 'connection_pool'
 module PgConduit
   class Connections
     def initialize(source, destination)
-      @src_pool = init_pool(source)
-      @dest_pool = init_pool(destination)
+      @src_pool   = init_pool source
+      @dest_pool  = init_pool destination
     end
 
     def with_source

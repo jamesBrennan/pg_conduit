@@ -11,7 +11,6 @@ module PgConduit
     #     .as do |user|
     #       %(INSERT INTO friends (name) VALUES ('#{user["full_name"]}'))
     #     end
-
     def initialize(from: nil, to: nil)
       @src = from
       @dest = to
@@ -36,11 +35,9 @@ module PgConduit
     end
 
     def as_chunked(size: 1000, prefix: nil)
-      collector = RowCollector.new
-      collector.every(size) do |rows|
-        if rows.length > 0
-          destination_exec [prefix, rows.join(',')].join(' ')
-        end
+      collector = RowCollector.new(chunk_size: size)
+      collector.on_chunk do |rows|
+        destination_exec [prefix, rows.join(',')].join(' ')
       end
 
       with_query_stream do |stream|
@@ -63,9 +60,7 @@ module PgConduit
     end
 
     def read(stream)
-      ParallelStreamReader.new.process(stream) do |row|
-        yield row
-      end
+      ParallelStreamReader.new.process(stream) { |row| yield row }
     end
 
     def destination_exec(sql)
