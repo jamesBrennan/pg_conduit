@@ -28,9 +28,7 @@ module PgConduit
       collector.on_chunk do |rows|
         write { [prefix, rows.join(',')].join(' ') }
       end
-
       read { |row| collector << yield(row) }
-
       collector.finish
     end
 
