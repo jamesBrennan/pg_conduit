@@ -10,6 +10,7 @@ module PgConduit
   autoload :Pipe,                 'pg_conduit/pipe'
   autoload :QueryStream,          'pg_conduit/query_stream'
   autoload :RowCollector,         'pg_conduit/row_collector'
+  autoload :STDOUTWriter,         'pg_conduit/stdout_writer'
 
   class << self
     # Create a new DB -> DB Pipe
@@ -36,6 +37,18 @@ module PgConduit
       file_writer   = FileWriter.new dest
 
       Pipe.new from: query_stream, to: file_writer
+    end
+
+    # Create a new DB -> STDOUT Pipe
+    #
+    # @param src [String,Hash] Connection params to source database
+    # @return [PgConduit::Pipe]
+    def db_to_stdout(src)
+      pool          = Connections.init_pool src
+      query_stream  = QueryStream.new pool
+      stdout_writer = STDOUTWriter.new
+
+      Pipe.new from: query_stream, to: stdout_writer
     end
   end
 end
