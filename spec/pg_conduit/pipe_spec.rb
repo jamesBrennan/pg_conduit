@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'tempfile'
 
 module PgConduit
   ::RSpec.describe Pipe do
@@ -8,6 +9,8 @@ module PgConduit
     let(:connections) { Connections.new(src, dest) }
     let(:stream) { QueryStream.new(connections.src_pool) }
     let(:writer) { DBWriter.new(connections.dest_pool) }
+
+    subject(:pipe) { described_class.new(from: stream, to: writer) }
 
     before do
       with_connection src do |conn|
@@ -43,23 +46,43 @@ module PgConduit
         end
       end
 
-      it 'works' do
-        described_class
-          .new(from: stream, to: writer)
-          .send('SELECT * FROM people')
-          .as do |person|
-          <<-SQL
-            INSERT INTO friends (full_name, age)
-            VALUES (
-              '#{person['full_name']}', 
-              EXTRACT(YEAR FROM age('#{person['dob']}'::timestamp))
-            )
-          SQL
-        end
+      describe 'writing to another database' do
+        it 'works' do
+          pipe.send('SELECT * FROM people')
+              .as do |person|
+                <<-SQL
+                  INSERT INTO friends (full_name, age)
+                  VALUES (
+                    '#{person['full_name']}',
+                    EXTRACT(YEAR FROM age('#{person['dob']}'::timestamp))
+                  )
+                SQL
+              end
 
-        with_connection dest do |conn|
-          res = conn.exec('SELECT count(*) FROM friends')
-          expect(res[0]).to eql('count' => '2')
+          with_connection dest do |conn|
+            res = conn.exec('SELECT count(*) FROM friends')
+            expect(res[0]).to eql('count' => '2')
+          end
+        end
+      end
+
+      describe 'writing to a file' do
+        let(:file) { Tempfile.new }
+        let(:writer) { FileWriter.new(file.path) }
+
+        it 'works' do
+          pipe.send('SELECT * FROM people')
+              .as do |row|
+                "#{row['dob']} | #{row['full_name']}"
+              end
+
+          expect(File.readlines(file.path)).to contain_exactly(
+            %(1838-04-21 | John Muir\n),
+            %(1904-04-22 | Robert Oppenheimer\n)
+          )
+        ensure
+          file.close
+          file.unlink
         end
       end
     end
@@ -89,14 +112,14 @@ module PgConduit
       end
 
       it 'works' do
-        described_class
-          .new(from: stream, to: writer)
+        pipe
           .send('SELECT * FROM people')
           .as_chunked(
-            size: 10,
-            prefix: 'INSERT INTO friends (full_name, age) VALUES') do |person|
-          %(('#{person['full_name']}', EXTRACT(YEAR FROM age('#{person['dob']}'::timestamp))))
-        end
+              size: 10,
+              prefix: 'INSERT INTO friends (full_name, age) VALUES'
+          ) do |person|
+            %(('#{person['full_name']}', EXTRACT(YEAR FROM age('#{person['dob']}'::timestamp))))
+          end
 
         with_connection dest do |conn|
           res = conn.exec('SELECT count(*) FROM friends')
