@@ -20,6 +20,7 @@ module PgConduit
       workers = dispatch_workers(&callback)
       reader.join
       workers.each { |t| t.join }
+      :ok
     end
 
     private

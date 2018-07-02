@@ -15,8 +15,8 @@ module PgConduit
   class << self
     # Create a new DB -> DB Pipe
     #
-    # @param src [String,Hash] Connection params to source database
-    # @param dest [String,Hash] Connection params to destination database
+    # @param src [String,Hash] Source database connection params
+    # @param dest [String,Hash] Destination database connection params
     # @return [PgConduit::Pipe]
     def db_to_db(src, dest)
       connections   = Connections.new src, dest
@@ -28,7 +28,7 @@ module PgConduit
 
     # Create a new DB -> File Pipe
     #
-    # @param src [String,Hash] Connection params to source database
+    # @param src [String,Hash] Source database connection params
     # @param dest [Sting,Pathname] Path to destination file
     # @return [PgConduit::Pipe]
     def db_to_file(src, dest)
@@ -41,7 +41,7 @@ module PgConduit
 
     # Create a new DB -> STDOUT Pipe
     #
-    # @param src [String,Hash] Connection params to source database
+    # @param src [String,Hash] Source database connection params
     # @return [PgConduit::Pipe]
     def db_to_stdout(src)
       pool          = Connections.init_pool src
