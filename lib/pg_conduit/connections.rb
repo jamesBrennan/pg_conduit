@@ -2,6 +2,8 @@ require 'connection_pool'
 
 module PgConduit
   class Connections
+    attr_reader :src_pool, :dest_pool
+
     def initialize(source, destination)
       @src_pool   = init_pool source
       @dest_pool  = init_pool destination

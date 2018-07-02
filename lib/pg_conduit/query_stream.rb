@@ -12,9 +12,9 @@ module PgConduit
   class QueryStream
     attr_reader :sql
 
-    # @param conn [PG::Connection] The database connection from which to stream results
-    def initialize(conn)
-      @conn = conn
+    # @param pool [ConnectionPool] A pool of PG::Connections
+    def initialize(pool)
+      @pool = pool
     end
 
     # @param sql [String] The SQL query to execute
@@ -26,10 +26,12 @@ module PgConduit
     # Execute query and yield each row
     # @yield [Hash] A hash representing a single row from the result set
     def each_row
-      @conn.send_query @sql
-      @conn.set_single_row_mode
-      @conn.get_result.stream_each do |row|
-        yield row
+      @pool.with do |conn|
+        conn.send_query @sql
+        conn.set_single_row_mode
+        conn.get_result.stream_each do |row|
+          yield row
+        end
       end
     end
   end

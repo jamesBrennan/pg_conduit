@@ -1,6 +1,7 @@
 require 'pg_conduit/connections'
 require 'pg_conduit/query_stream'
 require 'pg_conduit/parallel_stream_reader'
+require 'pg_conduit/db_writer'
 
 module PgConduit
   class Pipe
@@ -11,60 +12,39 @@ module PgConduit
     #     .as do |user|
     #       %(INSERT INTO friends (name) VALUES ('#{user["full_name"]}'))
     #     end
-    def initialize(from: nil, to: nil)
-      @src = from
-      @dest = to
-    end
-
-    def from(source)
-      self.tap { @src = source }
-    end
-
-    def to(destination)
-      self.tap { @dest = destination }
+    def initialize(from:, to:)
+      @connections = Connections.new(from, to)
+      @stream = QueryStream.new(@connections.src_pool)
+      @writer = DBWriter.new(@connections.dest_pool)
     end
 
     def send(query)
-      self.tap { @query = query }
+      self.tap { @stream.query(query) }
     end
 
     def as
-      with_query_stream do |stream|
-        read(stream) { |row| destination_exec yield(row) }
-      end
+      read(@stream) { |row| write yield(row) }
     end
 
     def as_chunked(size: 1000, prefix: nil)
       collector = RowCollector.new(chunk_size: size)
       collector.on_chunk do |rows|
-        destination_exec [prefix, rows.join(',')].join(' ')
+        write [prefix, rows.join(',')].join(' ')
       end
 
-      with_query_stream do |stream|
-        read(stream) { |row| collector << yield(row) }
-      end
+      read(@stream) { |row| collector << yield(row) }
 
       collector.finish
     end
 
     private
 
-    def connections
-      @connections ||= Connections.new(@src, @dest)
-    end
-
-    def with_query_stream
-      connections.with_source do |conn|
-        yield QueryStream.new(conn).query(@query)
-      end
-    end
-
     def read(stream)
       ParallelStreamReader.new.process(stream) { |row| yield row }
     end
 
-    def destination_exec(sql)
-      connections.with_destination { |conn| conn.exec sql }
+    def write(line)
+      @writer.write line
     end
   end
 end

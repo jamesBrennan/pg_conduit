@@ -1,8 +1,8 @@
 require 'spec_helper'
 
 def with_stream
-  with_connection ENV.fetch('TEST_DB_SRC') do |conn|
-    yield PgConduit::QueryStream.new(conn)
+  with_pool ENV.fetch('TEST_DB_SRC') do |pool|
+    yield PgConduit::QueryStream.new(pool)
   end
 end
 
