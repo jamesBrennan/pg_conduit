@@ -29,8 +29,11 @@ module PgConduit
       @pool.with do |conn|
         conn.send_query @sql
         conn.set_single_row_mode
-        conn.get_result.stream_each do |row|
-          yield row
+        loop do
+          res = conn.get_result
+          break unless res
+          res.check
+          res.stream_each { |row| yield row }
         end
       end
     end
