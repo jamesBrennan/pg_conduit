@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 RSpec.describe PgConduit::ParallelStreamReader do
-  subject(:dispatcher) { described_class.new }
+  subject(:reader) { described_class.new(query_stream) }
 
   let(:query_stream) { instance_double(PgConduit::QueryStream) }
 
@@ -19,7 +19,7 @@ RSpec.describe PgConduit::ParallelStreamReader do
       end
     )
     expect { |b|
-      dispatcher.process(query_stream, &b)
+      reader.read(&b)
     }.to yield_control.exactly(100).times
   end
 end

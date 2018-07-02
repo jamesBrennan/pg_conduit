@@ -15,6 +15,7 @@ module PgConduit
     def initialize(from:, to:)
       @connections = Connections.new(from, to)
       @stream = QueryStream.new(@connections.src_pool)
+      @reader = ParallelStreamReader.new(@stream)
       @writer = DBWriter.new(@connections.dest_pool)
     end
 
@@ -23,28 +24,28 @@ module PgConduit
     end
 
     def as
-      read(@stream) { |row| write yield(row) }
+      read { |row| write { yield row } }
     end
 
     def as_chunked(size: 1000, prefix: nil)
       collector = RowCollector.new(chunk_size: size)
       collector.on_chunk do |rows|
-        write [prefix, rows.join(',')].join(' ')
+        write { [prefix, rows.join(',')].join(' ') }
       end
 
-      read(@stream) { |row| collector << yield(row) }
+      read { |row| collector << yield(row) }
 
       collector.finish
     end
 
     private
 
-    def read(stream)
-      ParallelStreamReader.new.process(stream) { |row| yield row }
+    def read(&b)
+      @reader.read(&b)
     end
 
-    def write(line)
-      @writer.write line
+    def write(&b)
+      @writer.write(&b)
     end
   end
 end

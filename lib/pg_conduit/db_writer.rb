@@ -4,8 +4,8 @@ module PgConduit
       @pool = pool
     end
 
-    def write(line)
-      @pool.with { |conn| conn.exec line }
+    def write
+      @pool.with { |conn| conn.exec yield }
     end
   end
 end
