@@ -22,18 +22,18 @@ module PgConduit
       self.tap { @row_formatter = formatter }
     end
 
-    def exec
-      read { |row| write { @row_formatter.call(row) } }
+    def write
+      exec_read { |row| exec_write { @row_formatter.call(row) } }
     end
 
-    def exec_batched(size: 1000)
+    def write_batched(size: 1000)
       collector = RowCollector.new(chunk_size: size)
 
       # Set callback to yield collected rows
-      collector.on_chunk { |rows| write { yield rows } }
+      collector.on_chunk { |rows| exec_write { yield rows } }
 
       # Process each row
-      read { |row| collector << @row_formatter.call(row) }
+      exec_read { |row| collector << @row_formatter.call(row) }
 
       # Yield any remaining rows
       collector.finish
@@ -41,11 +41,11 @@ module PgConduit
 
     private
 
-    def read(&b)
+    def exec_read(&b)
       @reader.read(&b)
     end
 
-    def write(&b)
+    def exec_write(&b)
       @writer.write(&b)
     end
   end

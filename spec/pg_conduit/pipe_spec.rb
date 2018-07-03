@@ -58,7 +58,7 @@ module PgConduit
             SQL
           }
 
-          pipe.send('SELECT * FROM people').transform(&insert_row).exec
+          pipe.send('SELECT * FROM people').transform(&insert_row).write
 
           with_connection dest do |conn|
             res = conn.exec('SELECT count(*) FROM friends')
@@ -74,7 +74,7 @@ module PgConduit
         it 'works' do
           pipe.send('SELECT * FROM people')
               .transform { |row| "#{row['dob']} | #{row['full_name']}" }
-              .exec
+              .write
 
           expect(File.readlines(file.path)).to contain_exactly(
             %(1838-04-21 | John Muir\n),
@@ -120,7 +120,7 @@ module PgConduit
 
         pipe.send('SELECT * FROM people')
             .transform(&values_formatter)
-            .exec_batched(size: 10) do |values|
+            .write_batched(size: 10) do |values|
               <<-SQL
                 INSERT INTO friends (full_name, age) 
                 VALUES #{values.join(',')}
