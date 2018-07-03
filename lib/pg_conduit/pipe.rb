@@ -18,7 +18,7 @@ module PgConduit
       self.tap { @stream.query(query) }
     end
 
-    def as(&formatter)
+    def transform(&formatter)
       self.tap { @row_formatter = formatter }
     end
 

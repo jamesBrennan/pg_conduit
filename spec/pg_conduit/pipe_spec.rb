@@ -58,7 +58,7 @@ module PgConduit
             SQL
           }
 
-          pipe.send('SELECT * FROM people').as(&insert_row).exec
+          pipe.send('SELECT * FROM people').transform(&insert_row).exec
 
           with_connection dest do |conn|
             res = conn.exec('SELECT count(*) FROM friends')
@@ -73,7 +73,7 @@ module PgConduit
 
         it 'works' do
           pipe.send('SELECT * FROM people')
-              .as { |row| "#{row['dob']} | #{row['full_name']}" }
+              .transform { |row| "#{row['dob']} | #{row['full_name']}" }
               .exec
 
           expect(File.readlines(file.path)).to contain_exactly(
@@ -119,7 +119,7 @@ module PgConduit
         }
 
         pipe.send('SELECT * FROM people')
-            .as(&values_formatter)
+            .transform(&values_formatter)
             .exec_batched(size: 10) do |values|
               <<-SQL
                 INSERT INTO friends (full_name, age) 
