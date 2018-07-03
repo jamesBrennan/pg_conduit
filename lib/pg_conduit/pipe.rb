@@ -14,7 +14,7 @@ module PgConduit
       @row_formatter = lambda { |row| row }
     end
 
-    def send(query)
+    def read(query)
       self.tap { @stream.query(query) }
     end
 

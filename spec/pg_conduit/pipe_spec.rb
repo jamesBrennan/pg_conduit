@@ -58,7 +58,7 @@ module PgConduit
             SQL
           }
 
-          pipe.send('SELECT * FROM people').transform(&insert_row).write
+          pipe.read('SELECT * FROM people').transform(&insert_row).write
 
           with_connection dest do |conn|
             res = conn.exec('SELECT count(*) FROM friends')
@@ -72,7 +72,7 @@ module PgConduit
         let(:writer) { FileWriter.new(file.path) }
 
         it 'works' do
-          pipe.send('SELECT * FROM people')
+          pipe.read('SELECT * FROM people')
               .transform { |row| "#{row['dob']} | #{row['full_name']}" }
               .write
 
@@ -118,7 +118,7 @@ module PgConduit
           SQL
         }
 
-        pipe.send('SELECT * FROM people')
+        pipe.read('SELECT * FROM people')
             .transform(&values_formatter)
             .write_batched(size: 10) do |values|
               <<-SQL
