@@ -11,22 +11,31 @@ module PgConduit
       @stream = from
       @writer = to
       @reader = ParallelStreamReader.new(@stream)
+      @row_formatter = lambda { |row| row }
     end
 
     def send(query)
       self.tap { @stream.query(query) }
     end
 
-    def as
-      read { |row| write { yield row } }
+    def as(&formatter)
+      self.tap { @row_formatter = formatter }
     end
 
-    def as_chunked(size: 1000, prefix: nil)
+    def exec
+      read { |row| write { @row_formatter.call(row) } }
+    end
+
+    def exec_batched(size: 1000)
       collector = RowCollector.new(chunk_size: size)
-      collector.on_chunk do |rows|
-        write { [prefix, rows.join(',')].join(' ') }
-      end
-      read { |row| collector << yield(row) }
+
+      # Set callback to yield collected rows
+      collector.on_chunk { |rows| write { yield rows } }
+
+      # Process each row
+      read { |row| collector << @row_formatter.call(row) }
+
+      # Yield any remaining rows
       collector.finish
     end
 

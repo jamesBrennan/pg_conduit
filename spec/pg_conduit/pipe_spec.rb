@@ -15,21 +15,21 @@ module PgConduit
     before do
       with_connection src do |conn|
         conn.exec <<-SQL
-        DROP TABLE IF EXISTS people;
-        CREATE TABLE people (
-          full_name character varying,
-          dob date
-        );
+          DROP TABLE IF EXISTS people;
+          CREATE TABLE people (
+            full_name character varying,
+            dob date
+          );
         SQL
       end
 
       with_connection dest do |conn|
         conn.exec <<-SQL
-        DROP TABLE IF EXISTS friends;
-        CREATE TABLE friends (
-          full_name character varying,
-          age integer
-        );
+          DROP TABLE IF EXISTS friends;
+          CREATE TABLE friends (
+            full_name character varying,
+            age integer
+          );
         SQL
       end
     end
@@ -38,26 +38,27 @@ module PgConduit
       before do
         with_connection src do |conn|
           conn.exec <<-SQL
-          INSERT INTO people (full_name, dob)
-          VALUES
-            ('Robert Oppenheimer', '1904-04-22'),
-            ('John Muir', '1838-04-21')
+            INSERT INTO people (full_name, dob)
+            VALUES
+              ('Robert Oppenheimer', '1904-04-22'),
+              ('John Muir', '1838-04-21')
           SQL
         end
       end
 
       describe 'writing to another database' do
         it 'works' do
-          pipe.send('SELECT * FROM people')
-              .as do |person|
-                <<-SQL
-                  INSERT INTO friends (full_name, age)
-                  VALUES (
-                    '#{person['full_name']}',
-                    EXTRACT(YEAR FROM age('#{person['dob']}'::timestamp))
-                  )
-                SQL
-              end
+          insert_row = lambda { |person|
+            <<-SQL
+              INSERT INTO friends (full_name, age)
+              VALUES (
+                '#{person['full_name']}',
+                EXTRACT(YEAR FROM age('#{person['dob']}'::timestamp))
+              )
+            SQL
+          }
+
+          pipe.send('SELECT * FROM people').as(&insert_row).exec
 
           with_connection dest do |conn|
             res = conn.exec('SELECT count(*) FROM friends')
@@ -72,9 +73,8 @@ module PgConduit
 
         it 'works' do
           pipe.send('SELECT * FROM people')
-              .as do |row|
-                "#{row['dob']} | #{row['full_name']}"
-              end
+              .as { |row| "#{row['dob']} | #{row['full_name']}" }
+              .exec
 
           expect(File.readlines(file.path)).to contain_exactly(
             %(1838-04-21 | John Muir\n),
@@ -97,29 +97,35 @@ module PgConduit
       before do
         with_connection src do |conn|
           conn.exec <<-SQL
-          DELETE FROM people;        
-
-          INSERT INTO people (full_name, dob)
-          VALUES #{people};
+            DELETE FROM people;        
+            INSERT INTO people (full_name, dob)
+            VALUES #{people};
           SQL
         end
 
         with_connection dest do |conn|
           conn.exec <<-SQL
-          DELETE FROM friends;
+            DELETE FROM friends;
           SQL
         end
       end
 
       it 'works' do
-        pipe
-          .send('SELECT * FROM people')
-          .as_chunked(
-              size: 10,
-              prefix: 'INSERT INTO friends (full_name, age) VALUES'
-          ) do |person|
-            %(('#{person['full_name']}', EXTRACT(YEAR FROM age('#{person['dob']}'::timestamp))))
-          end
+        values_formatter = lambda { |person|
+          <<-SQL
+            ('#{person['full_name']}',
+             EXTRACT(YEAR FROM age('#{person['dob']}'::timestamp)))
+          SQL
+        }
+
+        pipe.send('SELECT * FROM people')
+            .as(&values_formatter)
+            .exec_batched(size: 10) do |values|
+              <<-SQL
+                INSERT INTO friends (full_name, age) 
+                VALUES #{values.join(',')}
+              SQL
+            end
 
         with_connection dest do |conn|
           res = conn.exec('SELECT count(*) FROM friends')
