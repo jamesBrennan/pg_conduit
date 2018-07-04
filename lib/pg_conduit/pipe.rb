@@ -18,8 +18,8 @@ module PgConduit
       self.tap { @stream.query(query) }
     end
 
-    def transform(&formatter)
-      self.tap { @transformers << formatter }
+    def transform(&transformer)
+      self.tap { @transformers << transformer }
     end
 
     def write
@@ -27,9 +27,7 @@ module PgConduit
     end
 
     def peak
-      self.tap do
-        @transformers << ->(row) { row.tap { yield row.dup } }
-      end
+      self.tap { @transformers << ->(row) { row.tap { yield row } } }
     end
 
     def write_batched(size: 1000)
@@ -45,6 +43,8 @@ module PgConduit
       collector.finish
     end
 
+    alias_method :exec, :write
+
     private
 
     def exec_read(&b)
@@ -56,7 +56,7 @@ module PgConduit
     end
 
     def exec_transform(row)
-      @transformers.reduce(row) { |r, transform| transform.call(r) }
+      @transformers.reduce(row) { |data, transform| transform.call data }
     end
   end
 end

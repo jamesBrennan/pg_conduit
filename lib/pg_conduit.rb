@@ -51,5 +51,17 @@ module PgConduit
 
       Pipe.new from: query_stream, to: stdout_writer
     end
+
+    # Create a new DB -> Null pipe
+    #
+    # @param src [String,Hash] Source database connection params
+    # @return [PgConduit::Pipe]
+    def db_to_null(src)
+      pool          = Connections.init_pool src
+      query_stream  = QueryStream.new pool
+      stdout_writer = NullWriter.new
+
+      Pipe.new from: query_stream, to: stdout_writer
+    end
   end
 end
