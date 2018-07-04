@@ -11,7 +11,7 @@ module PgConduit
       @stream = from
       @writer = to
       @reader = ParallelStreamReader.new(@stream)
-      @row_formatter = lambda { |row| row }
+      @transformers = []
     end
 
     def read(query)
@@ -19,11 +19,11 @@ module PgConduit
     end
 
     def transform(&formatter)
-      self.tap { @row_formatter = formatter }
+      self.tap { @transformers << formatter }
     end
 
     def write
-      exec_read { |row| exec_write { @row_formatter.call(row) } }
+      exec_read { |row| exec_write { exec_transform(row) } }
     end
 
     def write_batched(size: 1000)
@@ -33,7 +33,7 @@ module PgConduit
       collector.on_chunk { |rows| exec_write { yield rows } }
 
       # Process each row
-      exec_read { |row| collector << @row_formatter.call(row) }
+      exec_read { |row| collector << exec_transform(row) }
 
       # Yield any remaining rows
       collector.finish
@@ -47,6 +47,10 @@ module PgConduit
 
     def exec_write(&b)
       @writer.write(&b)
+    end
+
+    def exec_transform(row)
+      @transformers.reduce(row) { |r, transform| transform.call(r) }
     end
   end
 end
