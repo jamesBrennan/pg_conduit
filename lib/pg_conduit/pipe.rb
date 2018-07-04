@@ -26,6 +26,12 @@ module PgConduit
       exec_read { |row| exec_write { exec_transform(row) } }
     end
 
+    def peak
+      self.tap do
+        @transformers << ->(row) { row.tap { yield row.dup } }
+      end
+    end
+
     def write_batched(size: 1000)
       collector = RowCollector.new(chunk_size: size)
 

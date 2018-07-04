@@ -87,6 +87,46 @@ module PgConduit
       end
     end
 
+    describe 'observing the data flow' do
+      let(:writer) { NullWriter.new }
+
+      before do
+        with_connection src do |conn|
+          conn.exec <<-SQL
+            INSERT INTO people (full_name)
+            VALUES ('John Muir')
+          SQL
+        end
+      end
+
+      it 'yields the row with preceding transforms applied' do
+        expect { |b|
+
+          pipe
+            .read('SELECT * FROM people')
+            .peak(&b)
+            .transform { |row| row['full_name'] }
+            .peak(&b)
+            .transform { |name| name.upcase  }
+            .peak(&b)
+            .write
+
+        }.to(
+          yield_successive_args(
+            # The first peak is before the transform, we get row data
+            { 'full_name' => 'John Muir', 'dob' => nil },
+
+            # The next peak is after the transform, we get the name
+            'John Muir',
+
+            # And so on ...
+            'JOHN MUIR'
+          )
+        )
+
+      end
+    end
+
     describe 'processing rows in chunks' do
       let(:people) {
         100.times.map do |n|
