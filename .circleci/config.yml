@@ -40,6 +40,10 @@ jobs:
           key: v1-dependencies-{{ checksum "Gemfile.lock" }}
 
       - run:
+          name: Wait for postgres container
+          command: dockerize -wait tcp://127.0.0.1:5432 -timeout 120s
+
+      - run:
           name: create databases
           command: bundle exec rake db:create
 
