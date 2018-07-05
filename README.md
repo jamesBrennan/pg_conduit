@@ -70,6 +70,49 @@ arguments that it accepts can be used.
           SQL
         end 
 
+### `PgConduit.db_to_file(source, destination)`
+
+Write output from source database to file.
+
+    source      = 'postgres://user:pass@source/db'
+    destination = '/some/system/path/user_count.txt'
+    
+    pipe = PgConduit.db_to_file(source, destination)
+    
+    pipe.read('SELECT count(*) FROM users')
+        .write { |res| "Number of users: #{res['count']}" }
+
+
+### `PgConduit.db_to_stdout(source)`
+
+Write output from source database to stdout.
+
+    source = 'postgres://user:pass@source/db'
+    
+    pipe = PgConduit.db_to_stdout(source)
+    
+    query = <<-SQL
+        SELECT posts.user_id, users.email, count(posts.*) FROM users
+        JOIN posts ON posts.user_id = users.id
+        GROUP BY posts.user_id, users.email
+    SQL
+    
+    pipe.read(query)
+        .write do |post_count| 
+          "#{post_count['user_id']} | #{post_count['email']} - #{post_count['count']}"
+        end
+        
+### `PgConduit.db_to_null(source)`
+
+Swallow output from source database. Mostly useful for testing. `exec` is an
+alias of `write`.
+
+    source = 'postgres://user:pass@source/db'
+    
+    pipe = PgConduit.db_to_null(source)
+        
+    pipe.read('SELECT count(*) FROM users')
+        .exec { |res| raise 'fail' unless res['count'] == 10 }
 
 ## Development
 
