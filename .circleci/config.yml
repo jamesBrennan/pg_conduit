@@ -18,7 +18,7 @@ jobs:
           POSTGRES_USER: circleci
           POSTGRES_DB: circleci
 
-    working_directory: ~/repo
+    working_directory: ~/src
 
     steps:
       - checkout

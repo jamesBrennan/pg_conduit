@@ -1,4 +1,5 @@
 require 'bundler/setup'
+require 'support/coverage'
 require 'pg_conduit'
 require 'support/connection_helpers'
 
