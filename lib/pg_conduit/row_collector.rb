@@ -60,13 +60,9 @@ module PgConduit
     # Yields the collected rows and resets the row collector
     # @yield [Array<Hash>] The collected rows
     def flush
-      error = false
       yield @rows if @rows.length > 0
-    rescue Exception => e
-      error = true
-      raise e
-    ensure
-      @rows = [] unless error
+      @rows = []
+      true
     end
   end
 end
