@@ -3,7 +3,7 @@ require 'simplecov'
 if ENV['CI'] == 'true'
   SimpleCov.coverage_dir('/tmp/coverage')
 else
-  local_dir = File.join File.dirname(__FILE__), '..', '..', 'coverage'
+  local_dir = File.join __dir__, '..', '..', 'coverage'
   SimpleCov.coverage_dir local_dir
 end
 
