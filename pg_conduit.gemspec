@@ -12,6 +12,8 @@ Gem::Specification.new do |spec|
   spec.summary       = 'Stream data from one postgres database to another'
   spec.homepage      = 'https://github.com/jamesBrennan/pg_conduit'
 
+  spec.license       = 'MIT'
+
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test|spec|features)/})
   end
@@ -29,5 +31,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'simplecov', '~> 0.16.1'
   spec.add_development_dependency 'yard', '~> 0.9'
   spec.add_development_dependency 'guard', '~> 2.14'
-  spec.add_development_dependency 'guard-rspec'
+  spec.add_development_dependency 'guard-rspec', '~> 4.7'
 end
