@@ -9,6 +9,7 @@ jobs:
       # specify the version you desire here
       - image: circleci/ruby:2.5.1-node-browsers
         environment:
+          - TEST_DB_HOST=postgres://circleci@localhost/
           - TEST_DB_SRC=postgres://circleci@localhost/pg_conduit_src_test
           - TEST_DB_DEST=postgres://circleci@localhost/pg_conduit_dest_test
 
@@ -37,6 +38,10 @@ jobs:
           paths:
             - ./vendor/bundle
           key: v1-dependencies-{{ checksum "Gemfile.lock" }}
+
+      - run:
+          name: create databases
+          command: bundle exec rake db:create
 
       # run tests!
       - run:

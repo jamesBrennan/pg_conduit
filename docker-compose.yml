@@ -18,6 +18,7 @@ services:
     environment:
       - TEST_DB_SRC=postgres://postgres@db/pg_conduit_src_test
       - TEST_DB_DEST=postgres://postgres@db/pg_conduit_dest_test
+      - TEST_DB_HOST=postgres://postgres@db/
     links:
       - db
 
