@@ -1,8 +1,11 @@
 # PgConduit
 
 Stream data between two postgres databases. This is mostly an excuse for me to
-play around with concurrency in Ruby. I would strongly advise against using this
-in a production environment.
+play around with concurrency in Ruby. 
+
+This gem is in early development. As such I would advise against using it in any 
+environment where data integrity is important. I will release version 1.0 when 
+I feel confident that the code is sufficiently robust.
 
 ## Installation
 
@@ -20,17 +23,55 @@ Or install it yourself as:
 
     $ gem install pg_conduit
 
-## Usage
+## Quick Start
 
-[TODO]
+### `PgConduit.db_to_db(source, destination)`
+
+Returns an instance of `PgConduit::Pipe` that will execute queries passed to
+`read` and `write` against the `source` and `destination` databases, 
+respectively.
+
+The `source` and `destination` arguments are passed to 
+[`PG::Connection`](https://www.rubydoc.info/gems/pg/PG/Connection), so any 
+arguments that it accepts can be used.
+
+#### Write one row at a time
+    
+    source      = 'postgres://user:pass@source/db'
+    destination = { dbname: 'my_local_db' }
+    
+    pipe = PgConduit.db_to_db(source, destination)
+    
+    pipe.read('SELECT id, full_name, email FROM users')
+        .write do |user|
+          <<-SQL
+            INSERT INTO customers(user_id, name, email)
+            VALUES ('#{user['id']}', '#{user['full_name']}', '#{user['email']}')
+          SQL
+        end 
+
+#### Write in batches
+
+    source      = 'postgres://user:pass@source/db'
+    destination = { dbname: 'my_local_db' }
+    
+    pipe = PgConduit.db_to_db(source, destination)
+    
+    pipe.read('SELECT id, full_name, email FROM users')
+        .transform do |user| 
+          <<-SQL
+            ('#{user['id']}', '#{user['full_name']}', '#{user['email']}')
+          SQL
+        end
+        .write_batched(size: 100) do |values|
+          <<-SQL
+            INSERT INTO customers(user_id, name, email)
+            VALUES #{values.join(',')}
+          SQL
+        end 
+
 
 ## Development
-
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
-
-[TODO: Docker Instructions]
 
 ## Contributing
 
