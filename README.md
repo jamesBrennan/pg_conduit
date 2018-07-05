@@ -1,5 +1,7 @@
 # PgConduit
 
+[![CircleCI](https://img.shields.io/circleci/project/github/jamesBrennan/pg_conduit.svg?style=svg)](https://circleci.com/gh/jamesBrennan/pg_conduit)
+
 Stream data between two postgres databases. This is mostly an excuse for me to
 play around with concurrency in Ruby. 
 
