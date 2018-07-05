@@ -37,82 +37,86 @@ arguments that it accepts can be used.
 
 #### Write one row at a time
     
-    source      = 'postgres://user:pass@source/db'
-    destination = { dbname: 'my_local_db' }
-    
-    pipe = PgConduit.db_to_db(source, destination)
-    
-    pipe.read('SELECT id, full_name, email FROM users')
-        .write do |user|
-          <<-SQL
-            INSERT INTO customers(user_id, name, email)
-            VALUES ('#{user['id']}', '#{user['full_name']}', '#{user['email']}')
-          SQL
-        end 
+```ruby
+source      = 'postgres://user:pass@source/db'
+destination = { dbname: 'my_local_db' }
+
+pipe = PgConduit.db_to_db(source, destination)
+
+pipe.read('SELECT id, full_name, email FROM users')
+    .write do |user|
+      <<-SQL
+        INSERT INTO customers(user_id, name, email)
+        VALUES ('#{user['id']}', '#{user['full_name']}', '#{user['email']}')
+      SQL
+    end 
+```
 
 #### Write in batches
 
-    source      = 'postgres://user:pass@source/db'
-    destination = { dbname: 'my_local_db' }
-    
-    pipe = PgConduit.db_to_db(source, destination)
-    
-    pipe.read('SELECT id, full_name, email FROM users')
-        .transform do |user| 
-          <<-SQL
-            ('#{user['id']}', '#{user['full_name']}', '#{user['email']}')
-          SQL
-        end
-        .write_batched(size: 100) do |values|
-          <<-SQL
-            INSERT INTO customers(user_id, name, email)
-            VALUES #{values.join(',')}
-          SQL
-        end 
+```ruby
+source      = 'postgres://user:pass@source/db'
+destination = { dbname: 'my_local_db' }
+
+pipe = PgConduit.db_to_db(source, destination)
+
+pipe.read('SELECT id, full_name, email FROM users')
+    .transform do |user| 
+      <<-SQL
+        ('#{user['id']}', '#{user['full_name']}', '#{user['email']}')
+      SQL
+    end
+    .write_batched(size: 100) do |values|
+      <<-SQL
+        INSERT INTO customers(user_id, name, email)
+        VALUES #{values.join(',')}
+      SQL
+    end 
+```
 
 ### `PgConduit.db_to_file(source, destination)`
 
 Write output from source database to file.
 
-    source      = 'postgres://user:pass@source/db'
-    destination = '/some/system/path/user_count.txt'
-    
-    pipe = PgConduit.db_to_file(source, destination)
-    
-    pipe.read('SELECT count(*) FROM users')
-        .write { |res| "Number of users: #{res['count']}" }
+```ruby
+source      = 'postgres://user:pass@source/db'
+destination = '/some/system/path/user_count.txt'
 
+pipe = PgConduit.db_to_file(source, destination)
+
+pipe.read('SELECT count(*) FROM users')
+    .write { |res| "Number of users: #{res['count']}" }
+```
 
 ### `PgConduit.db_to_stdout(source)`
 
 Write output from source database to stdout.
 
-    source = 'postgres://user:pass@source/db'
-    
-    pipe = PgConduit.db_to_stdout(source)
-    
-    query = <<-SQL
-        SELECT posts.user_id, users.email, count(posts.*) FROM users
-        JOIN posts ON posts.user_id = users.id
-        GROUP BY posts.user_id, users.email
-    SQL
-    
-    pipe.read(query)
-        .write do |post_count| 
-          "#{post_count['user_id']} | #{post_count['email']} - #{post_count['count']}"
-        end
+```ruby
+pipe = PgConduit.db_to_stdout('postgres://user:pass@source/db')
+
+query = <<-SQL
+  SELECT posts.user_id, users.email, count(posts.*) FROM users
+  JOIN posts ON posts.user_id = users.id
+  GROUP BY posts.user_id, users.email
+SQL
+
+pipe.read(query)
+    .write do |post_count| 
+      "#{post_count['user_id']} | #{post_count['email']} - #{post_count['count']}"
+    end
+```
         
 ### `PgConduit.db_to_null(source)`
 
 Swallow output from source database. Mostly useful for testing. `exec` is an
 alias of `write`.
 
-    source = 'postgres://user:pass@source/db'
-    
-    pipe = PgConduit.db_to_null(source)
-        
-    pipe.read('SELECT count(*) FROM users')
-        .exec { |res| raise 'fail' unless res['count'] == 10 }
+```ruby
+pipe = PgConduit.db_to_null('postgres://user:pass@source/db')
+pipe.read('SELECT count(*) FROM users')
+    .exec { |res| raise 'fail' unless res['count'] == 10 }
+```
 
 ## Development
 
