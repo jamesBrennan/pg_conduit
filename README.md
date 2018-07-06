@@ -46,12 +46,13 @@ destination = { dbname: 'my_local_db' }
 pipe = PgConduit.db_to_db(source, destination)
 
 pipe.read('SELECT id, full_name, email FROM users')
-    .write do |user|
+    .transform do |user|
       <<-SQL
         INSERT INTO customers(user_id, name, email)
         VALUES ('#{user['id']}', '#{user['full_name']}', '#{user['email']}')
       SQL
-    end 
+    end
+    .exec
 ```
 
 #### Write in batches
@@ -87,7 +88,8 @@ destination = '/some/system/path/user_count.txt'
 pipe = PgConduit.db_to_file(source, destination)
 
 pipe.read('SELECT count(*) FROM users')
-    .write { |res| "Number of users: #{res['count']}" }
+    .transform { |res| "Number of users: #{res['count']}" }
+    .exec
 ```
 
 ### `PgConduit.db_to_stdout(source)`
@@ -104,9 +106,10 @@ query = <<-SQL
 SQL
 
 pipe.read(query)
-    .write do |post_count| 
+    .transform do |post_count| 
       "#{post_count['user_id']} | #{post_count['email']} - #{post_count['count']}"
     end
+    .exec
 ```
         
 ### `PgConduit.db_to_null(source)`
@@ -117,7 +120,8 @@ alias of `write`.
 ```ruby
 pipe = PgConduit.db_to_null('postgres://user:pass@source/db')
 pipe.read('SELECT count(*) FROM users')
-    .exec { |res| raise 'fail' unless res['count'] == 10 }
+    .peak { |res| raise 'fail' unless res['count'] == 10 }
+    .exec
 ```
 
 ## Development
