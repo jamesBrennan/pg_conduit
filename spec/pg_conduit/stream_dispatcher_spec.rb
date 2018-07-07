@@ -11,7 +11,7 @@ RSpec.describe PgConduit::ParallelStreamReader do
 
   it 'yields each row in the stream' do
     expect(query_stream).to(
-      receive(:each_row).tap do |exp|
+      receive(:each).tap do |exp|
         100.times do |n|
           exp.and_yield("row_#{n}")
         end

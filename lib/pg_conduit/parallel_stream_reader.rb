@@ -27,7 +27,7 @@ module PgConduit
 
     def read_stream(query_stream)
       Thread.new do
-        query_stream.each_row { |row| @queue << row }
+        query_stream.each { |row| @queue << row }
         @queue.close
       end
     end

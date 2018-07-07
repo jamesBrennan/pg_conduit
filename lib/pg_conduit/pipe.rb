@@ -3,10 +3,11 @@ module PgConduit
     # @example
     #   Pipe
     #     .new(from: query_stream, to: db_writer)
-    #     .send('SELECT name FROM users')
-    #     .as do |user|
+    #     .read('SELECT name FROM users')
+    #     .transform do |user|
     #       %(INSERT INTO friends (name) VALUES ('#{user["full_name"]}'))
     #     end
+    #     .exec
     def initialize(from:, to:)
       @stream = from
       @writer = to
@@ -18,8 +19,11 @@ module PgConduit
       self.tap { @stream.query(query) }
     end
 
-    def transform(&transformer)
-      self.tap { @transformers << transformer }
+    def transform(*transformers, &transformer)
+      self.tap do
+        @transformers.concat(transformers)
+        @transformers << transformer if block_given?
+      end
     end
 
     def write

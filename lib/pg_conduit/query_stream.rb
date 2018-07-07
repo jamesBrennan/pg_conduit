@@ -37,5 +37,7 @@ module PgConduit
         end
       end
     end
+
+    alias_method :each, :each_row
   end
 end

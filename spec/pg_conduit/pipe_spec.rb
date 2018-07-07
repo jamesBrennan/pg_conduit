@@ -34,6 +34,43 @@ module PgConduit
       end
     end
 
+    describe '.transforming with classes' do
+      let(:stream) { [1,2,3] }
+      let(:writer) { NullWriter.new }
+
+      let(:double_tuple) do
+        Class.new do
+          def self.call(input)
+            [input, input + input]
+          end
+        end
+      end
+
+      let(:sum) do
+        Class.new do
+          def self.call(tuple)
+            tuple.reduce(&:+)
+          end
+        end
+      end
+
+      it 'applies the transformations' do
+        expect { |b|
+          pipe
+            .transform(double_tuple)
+            .transform(sum)
+            .peak(&b)
+            .exec
+        }.to yield_successive_args(3,6,9)
+      end
+
+      it 'accepts multiple transformations' do
+        expect { |b|
+          pipe.transform(double_tuple, sum, &b).exec
+        }.to yield_successive_args(3,6,9)
+      end
+    end
+
     describe 'processing one row at a time' do
       before do
         with_connection src do |conn|
