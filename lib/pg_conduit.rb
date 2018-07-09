@@ -5,6 +5,7 @@ require 'pg_conduit/version'
 module PgConduit
   autoload :Connections,          'pg_conduit/connections'
   autoload :DBWriter,             'pg_conduit/db_writer'
+  autoload :EnumStream,           'pg_conduit/enum_stream'
   autoload :FileWriter,           'pg_conduit/file_writer'
   autoload :NullWriter,           'pg_conduit/null_writer'
   autoload :ParallelStreamReader, 'pg_conduit/parallel_stream_reader'

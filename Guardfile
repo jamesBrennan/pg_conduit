@@ -17,5 +17,6 @@
 
 guard :rspec, cmd: 'bundle exec rspec', all_on_start: true do
   watch(%r{^spec/(.+)\.rb$}) { 'spec' }
-  watch(%r{^lib/(.+)\.rb$})     { |m| "spec/#{m[1]}_spec.rb" }
+  watch(%r{^lib/pg_conduit/(.+)\.rb$}) { |m| "spec/unit/#{m[1]}_spec.rb" }
+  watch(%r{^lib/pg_conduit/(.+)\.rb$}) { |m| "spec/integration/#{m[1]}_spec.rb" }
 end

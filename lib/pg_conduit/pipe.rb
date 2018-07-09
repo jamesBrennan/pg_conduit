@@ -30,6 +30,13 @@ module PgConduit
       exec_read { |row| exec_write { exec_transform(row) } }
     end
 
+    def run
+      exec_read do |row|
+        result = exec_write { exec_transform(row) }
+        yield result if block_given?
+      end
+    end
+
     def peak
       self.tap { @transformers << ->(row) { row.tap { yield row } } }
     end

@@ -1,7 +1,7 @@
 module PgConduit
   class NullWriter
     def write
-      nil.tap { yield }
+      yield
     end
   end
 end
