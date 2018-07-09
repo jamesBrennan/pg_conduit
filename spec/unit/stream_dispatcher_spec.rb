@@ -6,7 +6,7 @@ RSpec.describe PgConduit::ParallelStreamReader do
   let(:query_stream) { instance_double(PgConduit::QueryStream) }
 
   before do
-    allow(query_stream).to receive(:query).and_return(query_stream)
+    allow(query_stream).to receive(:select).and_return(query_stream)
   end
 
   it 'yields each row in the stream' do
