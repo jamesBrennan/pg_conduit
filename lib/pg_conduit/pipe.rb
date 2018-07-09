@@ -16,7 +16,7 @@ module PgConduit
     end
 
     def read(query)
-      self.tap { @stream.query(query) }
+      self.tap { @stream.select(query) }
     end
 
     def transform(*transformers, &transformer)
@@ -28,6 +28,22 @@ module PgConduit
 
     def write
       exec_read { |row| exec_write { exec_transform(row) } }
+    end
+
+    def run
+      exec_read do |row|
+        input  = exec_transform row
+        result = exec_write { input }
+        yield [input, result] if block_given?
+      end
+    end
+
+    def run!
+      exec_read do |row|
+        input   = exec_transform row
+        result  = exec_write! { input }
+        yield [input, result] if block_given?
+      end
     end
 
     def peak
@@ -56,6 +72,14 @@ module PgConduit
     end
 
     def exec_write(&b)
+      result = exec_write!(&b)
+    rescue StandardError => e
+      result = e
+    ensure
+      result
+    end
+
+    def exec_write!(&b)
       @writer.write(&b)
     end
 

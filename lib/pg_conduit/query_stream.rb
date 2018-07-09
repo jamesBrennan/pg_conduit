@@ -19,13 +19,13 @@ module PgConduit
 
     # @param sql [String] The SQL query to execute
     # @return [self]
-    def query(sql)
+    def select(sql)
       self.tap { @sql = sql }
     end
 
     # Execute query and yield each row
     # @yield [Hash] A hash representing a single row from the result set
-    def each_row
+    def each
       @pool.with do |conn|
         conn.send_query @sql
         conn.set_single_row_mode
@@ -37,7 +37,5 @@ module PgConduit
         end
       end
     end
-
-    alias_method :each, :each_row
   end
 end
