@@ -16,7 +16,7 @@ module PgConduit
     end
 
     def read(query)
-      self.tap { @stream.query(query) }
+      self.tap { @stream.select(query) }
     end
 
     def transform(*transformers, &transformer)
