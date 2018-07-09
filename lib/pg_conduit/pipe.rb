@@ -32,8 +32,9 @@ module PgConduit
 
     def run
       exec_read do |row|
-        result = exec_write { exec_transform(row) }
-        yield result if block_given?
+        input  = exec_transform(row)
+        result = exec_write { input }
+        yield [input, result] if block_given?
       end
     end
 
@@ -63,7 +64,11 @@ module PgConduit
     end
 
     def exec_write(&b)
-      @writer.write(&b)
+      result = @writer.write(&b)
+    rescue StandardError => e
+      result = e
+    ensure
+      result
     end
 
     def exec_transform(row)

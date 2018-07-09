@@ -6,7 +6,7 @@ RSpec.describe PgConduit::Pipe do
 
   let(:stream) { PgConduit::EnumStream.new(input) }
   let(:writer) { PgConduit::NullWriter.new }
-  let(:input) { [1,2,3] }
+  let(:input) { [1, 2, 3] }
 
   describe '.peak' do
     it 'yields the output of the step before it' do
@@ -16,7 +16,7 @@ RSpec.describe PgConduit::Pipe do
     end
 
     it 'does not modify the data stream' do
-      expect { |b| pipe.peak { |x| x * x }.peak(&b).run }.to (
+      expect { |b| pipe.peak { |x| x * x }.peak(&b).run }.to(
         yield_successive_args 1, 2, 3
       )
     end
@@ -33,7 +33,7 @@ RSpec.describe PgConduit::Pipe do
     end
 
     it 'applies the transformations when .run is called' do
-      expect { |b| transformed.peak(&b).run }.to (
+      expect { |b| transformed.peak(&b).run }.to(
         yield_successive_args 2, 3, 4
       )
     end
@@ -51,7 +51,7 @@ RSpec.describe PgConduit::Pipe do
 
       it 'applies the transformations' do
         expect { |b| transformed.peak(&b).run }.to(
-          yield_successive_args [1,2], [2,4], [3,6]
+          yield_successive_args [1, 2], [2, 4], [3, 6]
         )
       end
     end
@@ -67,6 +67,34 @@ RSpec.describe PgConduit::Pipe do
       it 'applies the transformations in the order specified' do
         expect { |b| transformed.peak(&b).run }.to(
           yield_successive_args '2', '4', '6'
+        )
+      end
+    end
+  end
+
+  describe '.run' do
+    let(:writer) { instance_double(PgConduit::NullWriter) }
+
+    describe 'when all writes succeed' do
+      before do
+        allow(writer).to receive(:write).and_return(100, 200, 300)
+      end
+
+      it 'yields a tuple with the input and output of writer.write' do
+        expect { |b| pipe.run(&b) }.to(
+          yield_successive_args [1, 100], [2, 200], [3, 300]
+        )
+      end
+    end
+
+    describe 'when a write raises an exception' do
+      before do
+        allow(writer).to receive(:write).and_raise('some error')
+      end
+
+      it 'yields a tuple with the input and the exception' do
+        expect { |b| pipe.run(&b) }.to(
+          yield_successive_args [1, Exception], [2, Exception], [3, Exception]
         )
       end
     end
