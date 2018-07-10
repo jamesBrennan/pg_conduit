@@ -52,7 +52,7 @@ pipe.read('SELECT id, full_name, email FROM users')
         VALUES ('#{user['id']}', '#{user['full_name']}', '#{user['email']}')
       SQL
     end
-    .exec
+    .run
 ```
 
 #### Write in batches
@@ -69,12 +69,13 @@ pipe.read('SELECT id, full_name, email FROM users')
         ('#{user['id']}', '#{user['full_name']}', '#{user['email']}')
       SQL
     end
-    .write_batched(size: 100) do |values|
+    .on_chunk(size: 100) do |values|
       <<-SQL
         INSERT INTO customers(user_id, name, email)
         VALUES #{values.join(',')}
       SQL
-    end 
+    end
+    .run
 ```
 
 ### `PgConduit.db_to_file(source, destination)`
@@ -89,7 +90,7 @@ pipe = PgConduit.db_to_file(source, destination)
 
 pipe.read('SELECT count(*) FROM users')
     .transform { |res| "Number of users: #{res['count']}" }
-    .exec
+    .run
 ```
 
 ### `PgConduit.db_to_stdout(source)`
@@ -109,7 +110,7 @@ pipe.read(query)
     .transform do |post_count| 
       "#{post_count['user_id']} | #{post_count['email']} - #{post_count['count']}"
     end
-    .exec
+    .run
 ```
         
 ### `PgConduit.db_to_null(source)`
@@ -121,7 +122,7 @@ alias of `write`.
 pipe = PgConduit.db_to_null('postgres://user:pass@source/db')
 pipe.read('SELECT count(*) FROM users')
     .peak { |res| raise 'fail' unless res['count'] == 10 }
-    .exec
+    .run
 ```
 
 ## Development

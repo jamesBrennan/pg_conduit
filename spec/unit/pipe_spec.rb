@@ -99,4 +99,19 @@ RSpec.describe PgConduit::Pipe do
       end
     end
   end
+
+  describe '.on_chunk' do
+    let(:input) { (1..20).to_a }
+    let(:writer) { instance_double(PgConduit::NullWriter) }
+
+    it 'sends writes in chunks' do
+      allow(writer).to receive(:write).and_return(:ok)
+
+      expect { |b|
+        pipe.on_chunk(size: 5) { |numbers| numbers.reduce(&:+) }.run(&b)
+      }.to(
+        yield_successive_args [15, :ok], [40, :ok], [65, :ok], [90, :ok]
+      )
+    end
+  end
 end
