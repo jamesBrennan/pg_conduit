@@ -57,7 +57,6 @@ module PgConduit
       Thread.new do
         if @collector
           run_batched
-          @collector.finish
         else
           run_single
         end
@@ -68,6 +67,8 @@ module PgConduit
 
     def run_batched
       exec_read { |row| @collector << exec_transform(row) }
+    ensure
+      @collector.finish
     end
 
     def run_single
