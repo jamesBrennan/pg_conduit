@@ -22,7 +22,7 @@ RSpec.describe PgConduit::QueryStream do
     end
   end
 
-  describe '.each_row' do
+  describe '.call' do
     before do
       with_connection ENV.fetch('TEST_DB_SRC') do |conn|
         conn.exec <<-SQL
@@ -42,7 +42,7 @@ RSpec.describe PgConduit::QueryStream do
 
     it 'yields each row' do
       with_stream do |stream|
-        expect { |b| stream.select('select * from people').each(&b) }.to(
+        expect { |b| stream.call('select * from people', &b) }.to(
           yield_successive_args(
             { 'full_name' => 'Robert Oppenheimer', 'dob' => '1904-04-22' },
             { 'full_name' => 'John Muir', 'dob' => '1838-04-21' }

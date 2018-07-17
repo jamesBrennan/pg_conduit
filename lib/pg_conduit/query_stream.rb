@@ -37,5 +37,20 @@ module PgConduit
         end
       end
     end
+
+    def call(sql)
+      Enumerator.new do |yielder|
+        @pool.with do |conn|
+          conn.send_query sql
+          conn.set_single_row_mode
+          loop do
+            res = conn.get_result
+            break unless res
+            res.check
+            res.stream_each { |row| yielder << row }
+          end
+        end
+      end
+    end
   end
 end
