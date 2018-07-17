@@ -11,7 +11,7 @@ module PgConduit
     def initialize(from:, to:)
       @stream               = from
       @writer               = to
-      @reader               = ParallelStreamReader.new(@stream)
+      @reader               = Parallelize.new(max_concurrency: 5).call(@stream)
       @transformers         = []
       @collector            = nil
       @on_chunk             = nil
@@ -90,7 +90,7 @@ module PgConduit
     end
 
     def exec_read(&b)
-      @reader.read(&b)
+      @reader.each(&b)
     end
 
     def exec_write(&b)

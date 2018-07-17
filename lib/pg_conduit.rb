@@ -9,7 +9,6 @@ module PgConduit
   autoload :FileWriter,           'pg_conduit/file_writer'
   autoload :NullWriter,           'pg_conduit/null_writer'
   autoload :Parallelize,          'pg_conduit/parallelize'
-  autoload :ParallelStreamReader, 'pg_conduit/parallel_stream_reader'
   autoload :Pipe,                 'pg_conduit/pipe'
   autoload :QueryStream,          'pg_conduit/query_stream'
   autoload :RowCollector,         'pg_conduit/row_collector'
