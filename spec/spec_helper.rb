@@ -2,6 +2,7 @@ require 'bundler/setup'
 require 'support/coverage'
 require 'pg_conduit'
 require 'support/connection_helpers'
+require 'support/matchers'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
