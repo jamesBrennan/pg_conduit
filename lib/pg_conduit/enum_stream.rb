@@ -2,6 +2,8 @@ module PgConduit
   # Wraps an enumerable so that it can be used in place of a
   # PgConduit::QueryStream
   class EnumStream
+    include Enumerable
+
     # @param enum [Enumerable] An enumerable object
     def initialize(enum)
       @enum = enum

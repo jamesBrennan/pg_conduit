@@ -10,6 +10,7 @@ module PgConduit
   #   end
   #
   class QueryStream
+    include Enumerable
     attr_reader :sql
 
     # @param pool [ConnectionPool] A pool of PG::Connections

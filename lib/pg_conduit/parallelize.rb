@@ -10,7 +10,7 @@ module PgConduit
 
     def call(enumerable)
       input = Thread.new {
-        enumerable.each { |o| @queue << o }
+        enumerable.lazy.each { |o| @queue << o }
         @queue.close
       }
 
