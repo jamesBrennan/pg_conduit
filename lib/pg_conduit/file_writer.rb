@@ -9,12 +9,12 @@ module PgConduit
     end
 
     def call(enum)
-      Enumerator.new do |yielder|
-        open(@path, 'a') do |f|
-          enum.each do |line|
-            f.puts line
-            yielder << line
-          end
+      return enum_for(:call, enum) unless block_given?
+
+      open(@path, 'a') do |f|
+        enum.each do |line|
+          f.puts line
+          yield line
         end
       end
     end

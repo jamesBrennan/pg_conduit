@@ -26,30 +26,21 @@ module PgConduit
 
     # Execute query and yield each row
     # @yield [Hash] A hash representing a single row from the result set
-    def each
+    def each(&block)
+      call @sql, &block
+    end
+
+    def call(sql)
+      return enum_for(:call, sql) unless block_given?
+
       @pool.with do |conn|
-        conn.send_query @sql
+        conn.send_query sql
         conn.set_single_row_mode
         loop do
           res = conn.get_result
           break unless res
           res.check
           res.stream_each { |row| yield row }
-        end
-      end
-    end
-
-    def call(sql)
-      Enumerator.new do |yielder|
-        @pool.with do |conn|
-          conn.send_query sql
-          conn.set_single_row_mode
-          loop do
-            res = conn.get_result
-            break unless res
-            res.check
-            res.stream_each { |row| yielder << row }
-          end
         end
       end
     end

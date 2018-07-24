@@ -9,9 +9,8 @@ module PgConduit
     end
 
     def call(enumerable)
-      Enumerator.new do |yielder|
-        enumerable.each { |query| yielder << exec(query) }
-      end
+      return enum_for(:call, enumerable) unless block_given?
+      enumerable.each { |query| yield exec(query) }
     end
 
     private
